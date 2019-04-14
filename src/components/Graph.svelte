@@ -12,8 +12,7 @@
       (max, current) => (current.median > max ? current.median : max),
       0
     );
-    graphData = data.map(x => (x.error || !maxValue ? 1 : x.median / maxValue));
-    console.log(data, graphData);
+    graphData = data.map(x => (x.error ? 1 : x.median / maxValue));
   }
 </script>
 
