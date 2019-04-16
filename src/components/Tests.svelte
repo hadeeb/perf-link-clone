@@ -1,6 +1,6 @@
 <script>
   import { onMount } from "svelte";
-  import { run, msToμs, runInWorker, setHash, debounce } from "../functions";
+  import { run, msToμs, runInWorker, setHash, debounce } from "../utils";
   import Editor from "./Editor.svelte";
   import TestControls from "./TestControls.svelte";
   import Graph from "./Graph.svelte";
@@ -18,23 +18,22 @@
 
   const debouncedRun = debounce(runTests, 500);
 
-  // $: {
-
-  //   debouncedRun();
-  // }
-
   $: {
     before, codes, useWorker;
     if (before && codes.length) setHash(before, codes);
     debouncedRun();
   }
 
-  onMount(onHashChange);
+  onHashChange();
 
   function onHashChange() {
-    before = atob(location.hash.slice(1).split("/")[0]);
-    codes = JSON.parse(atob(location.hash.slice(1).split("/")[1]));
-    // runTests();
+    try {
+      before = atob(location.hash.slice(1).split("/")[1]);
+      codes = JSON.parse(atob(location.hash.slice(1).split("/")[2]));
+    } catch (e) {
+      before = "";
+      codes = [];
+    }
   }
 
   function addTestCase() {
@@ -95,8 +94,6 @@
       on:delete="{()=>deleteTestCaseAt(i)}"
     ></TestControls>
   </li>
-  {:else}
-  <div>Add a test</div>
   {/each}
 </ul>
 

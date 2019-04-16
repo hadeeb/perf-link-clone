@@ -1,4 +1,4 @@
-import workerize from "workerize";
+import workerize from "./workerize";
 
 const iterations = 100;
 
@@ -62,6 +62,9 @@ export async function runInWorker(test) {
     times.push(time);
     done--;
   }
+
+  worker.terminate();
+
   if (err) {
     return {
       error: true,
@@ -76,7 +79,7 @@ export async function runInWorker(test) {
 }
 
 export function setHash(before, codes) {
-  location.hash = `${btoa(before)}/${btoa(JSON.stringify(codes))}`;
+  location.hash = `#/${btoa(before)}/${btoa(JSON.stringify(codes))}`;
 }
 
 export function debounce(func, wait) {

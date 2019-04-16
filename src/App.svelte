@@ -1,20 +1,17 @@
 <script>
-  import Router from "./components/Router";
-  import Home from "./components/Home.svelte";
-  import About from "./components/About.svelte";
-  import Tests from "./components/Tests.svelte";
+  import Router from "./components/Router.svelte";
 
   const routes = [
     {
-      path: "about",
-      component: About
+      path: "/about",
+      component: () => import("./components/About.svelte")
     },
     {
-      path: "*",
-      component: Tests
+      path: "/*",
+      component: () => import("./components/Tests.svelte")
     },
     {
-      component: Home
+      component: () => import("./components/Home.svelte")
     }
   ];
 </script>

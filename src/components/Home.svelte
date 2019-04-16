@@ -1,5 +1,5 @@
 <script>
-  import { setHash } from "../functions";
+  import { setHash } from "../utils";
 
   function gotoTest() {
     const before = "const data = [...Array(10000).keys()]",
@@ -11,8 +11,7 @@
 <main>
   <h1>Home</h1>
   <button on:click="{gotoTest}">Start Tests</button>
-  <a href="#about">About</a>
-  <div></div>
+  <a href="#/about">About</a>
 </main>
 
 <style>
@@ -21,10 +20,5 @@
   }
   a {
     color: white;
-  }
-  div {
-    width: 100%;
-    height: 1rem;
-    background-color: rgb(248, 128, 112);
   }
 </style>
