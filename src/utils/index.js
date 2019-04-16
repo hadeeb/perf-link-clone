@@ -12,10 +12,10 @@ export async function run(test) {
   try {
     let done = iterations;
     while (done > 0) {
-      let time = eval(
-        `()=> {${test.before};let start = performance.now();${
+      let time = await eval(
+        `async ()=> {${test.before};let end,start = performance.now();${
           test.code
-        };let end = performance.now();return end - start;}`
+        };end = performance.now();return end - start;}`
       )();
       times.push(time);
       done--;
@@ -33,11 +33,11 @@ export async function run(test) {
 }
 
 export async function runInWorker(test) {
-  const code = `function run() {try{${
+  const code = `async function run() {try{${
     test.before
-  };let start = performance.now();${
+  };let end,start = performance.now();${
     test.code
-  };let end = performance.now();return end - start;}catch(e){return -1}}`;
+  };end = performance.now();return end - start;}catch(e){return -1}}`;
 
   try {
     eval(code);
@@ -94,4 +94,22 @@ export function debounce(func, wait) {
     clearTimeout(timeout);
     timeout = setTimeout(later, wait);
   };
+}
+
+export function cancellable(promise) {
+  let cancelled = false;
+  let pr = new Promise((res, rej) => {
+    promise
+      .then(function() {
+        if (!cancelled) res(...arguments);
+        else rej({ message: "Cancelled" });
+      })
+      .catch(function() {
+        rej(...arguments);
+      });
+  });
+  pr.cancel = () => {
+    cancelled = true;
+  };
+  return pr;
 }

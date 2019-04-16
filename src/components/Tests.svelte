@@ -1,6 +1,14 @@
 <script>
+  import { noop } from "svelte/internal";
   import { onMount } from "svelte";
-  import { run, msToμs, runInWorker, setHash, debounce } from "../utils";
+  import {
+    run,
+    msToμs,
+    runInWorker,
+    setHash,
+    debounce,
+    cancellable
+  } from "../utils";
   import Editor from "./Editor.svelte";
   import TestControls from "./TestControls.svelte";
   import Graph from "./Graph.svelte";
@@ -10,7 +18,8 @@
     codes = [],
     results = [],
     errors = [],
-    vals = [];
+    vals = [],
+    promise = cancellable(Promise.resolve());
   $: {
     vals = results.map(res => msToμs(res.median));
     errors = results.map(res => res.error);
@@ -19,9 +28,14 @@
   const debouncedRun = debounce(runTests, 500);
 
   $: {
-    before, codes, useWorker;
+    before, codes;
     if (before && codes.length) setHash(before, codes);
     debouncedRun();
+  }
+
+  $: {
+    useWorker;
+    rerun();
   }
 
   onHashChange();
@@ -52,14 +66,24 @@
     setHash(before, codes);
   }
 
-  function runTests() {
+  function rerun() {
     results = Array(codes.length).fill({ error: false, median: 0 });
+    debouncedRun();
+  }
+
+  function runTests() {
+    promise.cancel();
     requestAnimationFrame(() =>
       requestAnimationFrame(async () => {
         const resultPromises = codes.map(code =>
           (useWorker ? runInWorker : run)({ code, before })
         );
-        results = await Promise.all(resultPromises);
+        promise = cancellable(Promise.all(resultPromises));
+        promise
+          .then(x => {
+            results = x;
+          })
+          .catch(noop);
       })
     );
   }
@@ -98,7 +122,7 @@
 </ul>
 
 {#if codes.length}
-<button on:click="{runTests}">Run Tests</button>
+<button on:click="{rerun}">Run Tests</button>
 <Graph data="{results}"></Graph>
 {/if}
 
