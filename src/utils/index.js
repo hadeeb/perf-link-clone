@@ -1,19 +1,19 @@
 import workerize from "./workerize";
 
-const iterations = 100;
-
 export const round = num => parseFloat(num).toFixed(0);
-const median = xs => xs.sort()[Math.ceil(xs.length / 2)];
+const median = xs => xs.sort()[Math.floor(xs.length / 2)];
 
 export const msToμs = num => Math.floor(num * 1000);
 
-export async function run(test) {
+export async function run(test, { iterations, isAsync }) {
   const times = [];
   try {
     let done = iterations;
     while (done > 0) {
       let time = await eval(
-        `async ()=> {${test.before};let end,start = performance.now();${
+        `${isAsync ? `async ` : ``}()=> {${
+          test.before
+        };let end,start = performance.now();${
           test.code
         };end = performance.now();return end - start;}`
       )();
@@ -32,8 +32,8 @@ export async function run(test) {
   }
 }
 
-export async function runInWorker(test) {
-  const code = `async function run() {try{${
+export async function runInWorker(test, { iterations, isAsync }) {
+  const code = `${isAsync ? `async ` : ``}function run() {try{${
     test.before
   };let end,start = performance.now();${
     test.code

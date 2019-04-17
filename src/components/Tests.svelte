@@ -14,6 +14,9 @@
   import Graph from "./Graph.svelte";
 
   let useWorker = true,
+    autoRun = false,
+    iterations = 100,
+    isAsync = true,
     before = "",
     codes = [],
     results = [],
@@ -30,12 +33,12 @@
   $: {
     before, codes;
     if (before && codes.length) setHash(before, codes);
-    debouncedRun();
+    if (autoRun) debouncedRun();
   }
 
   $: {
-    useWorker;
-    rerun();
+    useWorker, isAsync, iterations;
+    if (autoRun) rerun();
   }
 
   onHashChange();
@@ -76,7 +79,10 @@
     requestAnimationFrame(() =>
       requestAnimationFrame(async () => {
         const resultPromises = codes.map(code =>
-          (useWorker ? runInWorker : run)({ code, before })
+          (useWorker ? runInWorker : run)(
+            { code, before },
+            { iterations, isAsync }
+          )
         );
         promise = cancellable(Promise.all(resultPromises));
         promise
@@ -93,10 +99,24 @@
 
 <div class="tests-heading">
   <h3>Setup Code</h3>
-  <label
-    ><input class="checkbox" type="checkbox" bind:checked="{useWorker}" /> Run
-    In WebWorker</label
-  >
+  <div>
+    <label
+      ><input class="checkbox" type="checkbox" bind:checked="{useWorker}" /> Run
+      In WebWorker</label
+    >
+    <label
+      ><input class="checkbox" type="checkbox" bind:checked="{autoRun}" /> Auto
+      Run</label
+    >
+    <label
+      ><input class="checkbox" type="checkbox" bind:checked="{isAsync}" />
+      Async</label
+    >
+    <label
+      ><input class="input" type="number" min="1" bind:value="{iterations}" />
+      Iterations</label
+    >
+  </div>
 </div>
 <Editor bind:code="{before}" label="Setup Code"></Editor>
 
@@ -140,6 +160,8 @@
   .tests-heading {
     display: flex;
     justify-content: space-between;
+    align-items: flex-end;
+    margin: 1em;
   }
   .add-button {
     color: orange;
@@ -154,6 +176,17 @@
   .checkbox {
     margin: 0;
     margin-right: 0.5em;
+  }
+  .input {
+    background-color: rgb(42, 43, 47);
+    border: none;
+    border-radius: 0.5em;
+    color: white;
+    width: 10vmax;
+    min-width: 100px;
+    margin: 0.2em 0.5em 0.2em 0;
+    padding: 0.3em;
+    padding-left: calc(14px + 0.5em);
   }
   button {
     color: lightblue;
