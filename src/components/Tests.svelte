@@ -33,7 +33,7 @@
   $: {
     before, codes;
     if (before && codes.length) setHash(before, codes);
-    if (autoRun) debouncedRun();
+    if (autoRun) rerun();
   }
 
   $: {
@@ -45,11 +45,18 @@
 
   function onHashChange() {
     try {
-      before = atob(location.hash.slice(1).split("/")[1]);
-      codes = JSON.parse(atob(location.hash.slice(1).split("/")[2]));
+      const hashArray = location.hash.slice(1).split("/");
+      before = atob(hashArray[1]);
+      codes = JSON.parse(atob(hashArray[2]));
     } catch (e) {
       before = "";
       codes = [];
+    }
+  }
+
+  function onKeyDown(event) {
+    if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) {
+      rerun();
     }
   }
 
@@ -76,78 +83,23 @@
 
   function runTests() {
     promise.cancel();
-    requestAnimationFrame(() =>
-      requestAnimationFrame(async () => {
-        const resultPromises = codes.map(code =>
-          (useWorker ? runInWorker : run)(
-            { code, before },
-            { iterations, isAsync }
-          )
-        );
-        promise = cancellable(Promise.all(resultPromises));
-        promise
-          .then(x => {
-            results = x;
-          })
-          .catch(noop);
-      })
+    const resultPromises = codes.map(code =>
+      (useWorker ? runInWorker : run)({ code, before }, { iterations, isAsync })
     );
+    promise = cancellable(Promise.all(resultPromises));
+    promise
+      .then(x => {
+        results = x;
+      })
+      .catch(noop);
   }
 </script>
 
-<svelte:window on:hashchange="{onHashChange}"></svelte:window>
-
-<div class="tests-heading">
-  <h3>Setup Code</h3>
-  <div>
-    <label
-      ><input class="checkbox" type="checkbox" bind:checked="{useWorker}" /> Run
-      In WebWorker</label
-    >
-    <label
-      ><input class="checkbox" type="checkbox" bind:checked="{autoRun}" /> Auto
-      Run</label
-    >
-    <label
-      ><input class="checkbox" type="checkbox" bind:checked="{isAsync}" />
-      Async</label
-    >
-    <label
-      ><input class="input" type="number" min="1" bind:value="{iterations}" />
-      Iterations</label
-    >
-  </div>
-</div>
-<Editor bind:code="{before}" label="Setup Code"></Editor>
-
-<br />
-<div class="tests-heading">
-  <h3>
-    Test cases
-  </h3>
-  <button class="add-button" on:click="{addTestCase}">Add Case</button>
-</div>
-<ul>
-  {#each codes as code,i}
-  <li>
-    <Editor bind:code="{code}" label="Test case {i}"></Editor>
-    <TestControls
-      time="{vals[i]}"
-      error="{errors[i]}"
-      on:copy="{()=>addTestCaseBefore(code,i)}"
-      on:delete="{()=>deleteTestCaseAt(i)}"
-    ></TestControls>
-  </li>
-  {/each}
-</ul>
-
-{#if codes.length}
-<button on:click="{rerun}">Run Tests</button>
-<Graph data="{results}"></Graph>
-{/if}
-
 <style>
   h1 {
+    padding: 5px 0px;
+  }
+  a {
     color: white;
   }
   h3 {
@@ -207,3 +159,59 @@
     margin: 1em 0;
   }
 </style>
+
+<svelte:window on:keydown={onKeyDown} on:hashchange={onHashChange} />
+
+<main>
+  <div class="tests-heading">
+    <div>
+      <h1>
+        <a href="/#/">JS Perf</a>
+      </h1>
+      <h3>Setup Code</h3>
+    </div>
+    <div>
+      <label>
+        <input class="checkbox" type="checkbox" bind:checked={useWorker} />
+        Run In WebWorker
+      </label>
+      <label>
+        <input class="checkbox" type="checkbox" bind:checked={autoRun} />
+        Auto Run
+      </label>
+      <label>
+        <input class="checkbox" type="checkbox" bind:checked={isAsync} />
+        Top level await
+      </label>
+      <label>
+        <input class="input" type="number" min="1" bind:value={iterations} />
+        Iterations
+      </label>
+    </div>
+  </div>
+  <Editor bind:code={before} label="Setup Code" />
+
+  <br />
+  <div class="tests-heading">
+    <h3>Test cases</h3>
+    <button class="add-button" on:click={addTestCase}>Add Case</button>
+  </div>
+  <ul>
+    {#each codes as code, i}
+      <li>
+        <Editor bind:code label="Test case {i}" />
+        <TestControls
+          time={vals[i]}
+          error={errors[i]}
+          on:copy={() => addTestCaseBefore(code, i)}
+          on:delete={() => deleteTestCaseAt(i)} />
+      </li>
+    {/each}
+  </ul>
+
+  {#if codes.length}
+    <button on:click={rerun}>Run Tests</button>
+    <Graph data={results} />
+  {/if}
+
+</main>
