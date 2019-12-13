@@ -11,11 +11,11 @@ export async function run(test, { iterations, isAsync }) {
     let done = iterations;
     while (done > 0) {
       let time = await eval(
-        `${isAsync ? `async ` : ``}()=> {${
-          test.before
-        };let end,start = performance.now();${
-          test.code
-        };end = performance.now();return end - start;}`
+        `${isAsync ? `async ` : ``}()=> {
+        ${test.before};
+        let end,start = performance.now();
+        ${test.code};
+        end = performance.now();return end - start;}`
       )();
       times.push(time);
       done--;
@@ -25,6 +25,7 @@ export async function run(test, { iterations, isAsync }) {
       median: median(times)
     };
   } catch (e) {
+    console.warn(e);
     return {
       error: true,
       median: 0
@@ -33,11 +34,11 @@ export async function run(test, { iterations, isAsync }) {
 }
 
 export async function runInWorker(test, { iterations, isAsync }) {
-  const code = `${isAsync ? `async ` : ``}function run() {try{${
-    test.before
-  };let end,start = performance.now();${
-    test.code
-  };end = performance.now();return end - start;}catch(e){return -1}}`;
+  const code = `${isAsync ? `async ` : ``}function run() {try{
+    ${test.before};
+    let end,start = performance.now();
+    ${test.code};
+    end = performance.now();return end - start;}catch(e){console.warn(e);return -1}}`;
 
   try {
     eval(code);

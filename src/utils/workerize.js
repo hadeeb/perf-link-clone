@@ -2,6 +2,7 @@
  * @license MIT
  * @see https://github.com/developit/workerize/blob/683631f402443d71484b03d087b37c72e65f2e3d/package.json
  * @author Jason Miller <jason@developit.ca> (http://jasonformat.com)
+ * https://github.com/developit/workerize/pull/28
  */
 export default function workerize(code, options) {
   let exports = {};

@@ -35,7 +35,14 @@ export default {
 
     // If we're building for production (npm run build
     // instead of npm run dev), minify
-    production && terser({ mangle: { eval: true, module: true } }),
+    production &&
+      terser({
+        mangle: { eval: true, module: true },
+        ecma: 8,
+        safari10: false,
+        module: true,
+        toplevel: true
+      }),
     del({ targets: "public/*.js*" })
   ]
 };
